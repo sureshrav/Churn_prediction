@@ -98,9 +98,9 @@ print t.dtypes
 
 print data.dtypes
 
-m=['gender','SeniorCitizen','Partner','Dependents','tenure','PhoneService','MultipleLines','OnlineSecurity','OnlineBackup','DeviceProtection','TechSupport','StreamingTV','StreamingMovies','PaperlessBilling','MonthlyCharges','intercept']
+tcols=['gender','SeniorCitizen','Partner','Dependents','tenure','PhoneService','MultipleLines','OnlineSecurity','OnlineBackup','DeviceProtection','TechSupport','StreamingTV','StreamingMovies','PaperlessBilling','MonthlyCharges','intercept']
 
-m=data[m]
+m=data[tcols]
 
 print m
 
@@ -111,5 +111,66 @@ result=logit.fit()
 print result.summary()
 
 print result.conf_int()
+
+print np.exp(result.params)
+
+#odds ratios and 95% CI
+
+params=result.params
+
+conf=result.conf_int()
+
+conf['OR']=params
+
+conf.columns=['2.5%','97.5%','OR']
+
+print np.exp(conf)
+
+ten = np.linspace(data['tenure'].min(), data['tenure'].max(), 10)
+
+ten=ten.astype(int);
+
+print ten
+
+mc = np.linspace(data['MonthlyCharges'].min(), data['MonthlyCharges'].max(), 10)
+
+print mc
+
+a=[1,0]
+
+
+
+def cartesian(arrays, out=None):
+
+    arrays = [np.asarray(x) for x in arrays]
+    dtype = arrays[0].dtype
+
+    n = np.prod([x.size for x in arrays])
+    if out is None:
+        out = np.zeros([n, len(arrays)], dtype=dtype)
+
+    m = n / arrays[0].size
+    out[:,0] = np.repeat(arrays[0], m)
+    if arrays[1:]:
+        cartesian(arrays[1:], out=out[0:m,1:])
+        for j in xrange(1, arrays[0].size):
+            out[j*m:(j+1)*m,1:] = out[0:m,1:]
+
+    return out
+
+
+combos=pd.DataFrame(cartesian([a,a,a,a,ten,a,a,a,a,a,a,a,a,a,mc,[1.]]))
+
+combos.columns=['gender','SeniorCitizen','Partner','Dependents','tenure','PhoneService','MultipleLines','OnlineSecurity','OnlineBackup','DeviceProtection','TechSupport','StreamingTV','StreamingMovies','PaperlessBilling','MonthlyCharges','intercept']
+
+combos['admit_pred']=result.predict(combos[tcols])
+
+print combos.head()
+
+
+
+    
+
+
 
 
