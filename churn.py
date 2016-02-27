@@ -3,67 +3,55 @@ import numpy as np
 import statsmodels.api as sm
 import pylab as pl
 
-
-# read the data in
 df = pd.read_csv("F:\Dataset\churn.csv")
-
-# take a look at the dataset
-#print df.columns
 
 colnames=df.columns.tolist()
 
 churnresult=df['Churn']
+
 y=np.where(churnresult=='Yes',1,0)
 
-todrop=['gender']
-churnspace=df.drop(todrop,axis=1)
-
-#yesnocols=["Partner","Dependents","PhoneService","MultipleLines","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies","PaperlessBilling"]
-
-#churnspace[yesnocols]=np.where(churnspace[yesnocols] == 'Yes',1)
+churnspace=df
 
 churnspace=churnspace.replace(['Yes','No','No internet service','No phone service'],[1,0,0,0])
     
 churnspace=churnspace.replace(['Bank transfer (automatic)','Credit card (automatic)','Electronic check','Mailed check'],[1,2,3,4])
 
-churnspace=churnspace.replace(['DSL','Fiber optic'],[1,2])
+churnspace=churnspace.replace(['DSL','Fiber optic','Male','Female'],[1,2,1,0])
 
 churnspace=churnspace.replace(['Month-to-month','One year','Two year'],[1,2,3])
 
+#print churnspace.head(5)
 
+#print "Unique target labels :",np.unique(y)
 
-print churnspace.head(5)
+#print np.unique(churnspace['PaymentMethod'])
 
-print "Unique target labels :",np.unique(y)
+#print np.unique(churnspace['InternetService'])
 
-print np.unique(churnspace['PaymentMethod'])
+#print np.unique(churnspace['Contract'])
 
-print np.unique(churnspace['InternetService'])
+#print churnspace.describe()
 
-print np.unique(churnspace['Contract'])
+#print churnspace.std()
 
-print churnspace.describe()
+#churnspace.hist()
 
-print churnspace.std()
-
-churnspace.hist()
-
-pl.show()
+#pl.show()
 
 dummy_pm=pd.get_dummies(churnspace['PaymentMethod'],prefix='PaymentMethod')
 
-print dummy_pm.head()
+#print dummy_pm.head()
 
 dummy_is=pd.get_dummies(churnspace['InternetService'],prefix='InternetService')
 
-print dummy_is.head()
+#print dummy_is.head()
 
 dummy_c=pd.get_dummies(churnspace['Contract'],prefix='Contract')
 
-print dummy_c.head()
+#print dummy_c.head()
 
-
-coltokeep=["customerID","SeniorCitizen","Partner","Dependents","tenure","PhoneService","MultipleLines","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies","PaperlessBilling","MonthlyCharges","TotalCharges","Churn"]
+coltokeep=["customerID","gender","SeniorCitizen","Partner","Dependents","tenure","PhoneService","MultipleLines","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies","PaperlessBilling","MonthlyCharges","TotalCharges","Churn"]
 
 data=churnspace[coltokeep].join(dummy_pm.ix[:,'PaymentMethod_1':])
 
@@ -71,19 +59,57 @@ data=data.join(dummy_c.ix[:,'Contract_1':])
 
 data=data.join(dummy_is.ix[:,'InternetService_0':])
 
-print data.head()
+#print data.head()
 
 data['intercept']=1.0
 
-train_cols=['SeniorCitizen', 'Partner', 'Dependents', 'tenure', 'PhoneService',
-       'MultipleLines']
+x=data['TotalCharges']
 
-print train_cols
+x=x.convert_objects(convert_numeric=True)
 
-logit=sm.Logit(data['Churn'],data[train_cols])
+#print x
+
+todrop=['TotalCharges','Churn']
+
+t=data.drop(todrop,axis=1)
+
+#print t.dtypes
+
+t=pd.concat([t,x],axis=1)
+
+print t.dtypes
+
+print t.head(9)
+
+todrop=['TotalCharges','MonthlyCharges']
+
+t=t.drop(todrop,axis=1)
+
+print t.dtypes
+
+cols=t.columns
+
+print cols
+'''
+
+t[cols]=t[cols].astype(int)'''
+
+print t.dtypes
+
+print data.dtypes
+
+m=['gender','SeniorCitizen','Partner','Dependents','tenure','PhoneService','MultipleLines','OnlineSecurity','OnlineBackup','DeviceProtection','TechSupport','StreamingTV','StreamingMovies','PaperlessBilling','MonthlyCharges','intercept']
+
+m=data[m]
+
+print m
+
+logit=sm.Logit(data['Churn'],m)
 
 result=logit.fit()
 
 print result.summary()
+
+print result.conf_int()
 
 
